@@ -1,6 +1,9 @@
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { SyncButton } from "@/app/components/SyncButton";
+import { StatCard } from "@/app/components/StatCard";
+import { ProgressRing } from "@/app/components/ProgressRing";
+import { Footprints, Route, Flame } from "lucide-react";
 
 export default async function DashboardPage() {
 	const user = await getAuthenticatedUser();
@@ -12,6 +15,14 @@ export default async function DashboardPage() {
 	});
 
 	const latest = activities[0];
+	const stepGoal = 10000;
+	const stepPercentage = latest
+		? Math.round((latest.steps / stepGoal) * 100)
+		: 0;
+	const caloriesGoal = 250;
+	const caloriesPercentage = latest
+		? Math.round((latest.calories / caloriesGoal) * 100)
+		: 0;
 
 	return (
 		<div className="min-h-screen bg-zinc-50 p-6 text-zinc-900 dark:bg-black dark:text-zinc-100 sm:p-10">
@@ -30,49 +41,65 @@ export default async function DashboardPage() {
 				</header>
 
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-					<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
-						<span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-							Steps Today
-						</span>
-						<div className="mt-2 flex items-baseline gap-2">
-							<span className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
-								{latest ? latest.steps.toLocaleString() : 0}
-							</span>
-							<span className="text-sm text-zinc-400">steps</span>
-						</div>
-					</div>
+					<StatCard
+						title="Steps Today"
+						value={latest ? latest.steps.toLocaleString() : 0}
+						unit="steps"
+						icon={<Footprints className="h-5 w-5" />}
+						accentColor="emerald"
+						subtitle={`${stepPercentage}% of ${stepGoal.toLocaleString()} goal`}
+						visual={
+							<ProgressRing
+								current={latest ? latest.steps : 0}
+								goal={stepGoal}
+								size={64}
+								strokeWidth={7}
+								showLabel={false}
+							/>
+						}
+					/>
 
-					<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
-						<span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-							Distance
-						</span>
-						<div className="mt-2 flex items-baseline gap-2">
-							<span className="text-3xl font-black text-blue-600 dark:text-blue-400">
-								{latest ? latest.distance.toFixed(2) : "0.00"}
-							</span>
-							<span className="text-sm text-zinc-400">km</span>
-						</div>
-					</div>
+					<StatCard
+						title="Distance"
+						value={latest ? latest.distance.toFixed(2) : "0.00"}
+						unit="km"
+						icon={<Route className="h-5 w-5" />}
+						accentColor="blue"
+						subtitle={
+							latest
+								? `${(latest.distance * 0.621371).toFixed(2)} miles`
+								: undefined
+						}
+					/>
 
-					<div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
-						<span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-							Calories Burned
-						</span>
-						<div className="mt-2 flex items-baseline gap-2">
-							<span className="text-3xl font-black text-amber-600 dark:text-amber-400">
-								{latest ? latest.calories.toLocaleString() : 0}
-							</span>
-							<span className="text-sm text-zinc-400">kcal</span>
-						</div>
-					</div>
+					<StatCard
+						title="Active Calories"
+						value={latest ? latest.calories.toLocaleString() : 0}
+						unit="kcal"
+						icon={<Flame className="h-5 w-5" />}
+						accentColor="amber"
+						subtitle={`${stepPercentage}% of ${caloriesGoal.toLocaleString()} goal`}
+						visual={
+							<ProgressRing
+								current={latest ? latest.calories : 0}
+								goal={caloriesGoal}
+								size={64}
+								strokeWidth={7}
+								showLabel={false}
+							/>
+						}
+					/>
 				</div>
 
 				<div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
 					<div className="flex items-center justify-between pb-4">
-						<h2 className="text-lg font-bold">Synced Health Records</h2>
+						<h2 className="text-lg font-bold">
+							Synced Health Records
+						</h2>
 						{latest && (
 							<span className="text-xs text-zinc-400">
-								Last synced: {new Date(latest.syncedAt).toLocaleTimeString()}
+								Last synced:{" "}
+								{new Date(latest.syncedAt).toLocaleTimeString()}
 							</span>
 						)}
 					</div>
@@ -80,8 +107,8 @@ export default async function DashboardPage() {
 					{activities.length === 0 ? (
 						<div className="py-10 text-center text-sm text-zinc-400">
 							No health data synced yet. Click the{" "}
-							<strong>&quot;Sync Google Health Data&quot;</strong> button above to pull
-							your steps from Google!
+							<strong>&quot;Sync Google Health Data&quot;</strong>{" "}
+							button above to pull your steps from Google!
 						</div>
 					) : (
 						<div className="overflow-x-auto">
@@ -91,25 +118,36 @@ export default async function DashboardPage() {
 										<th className="pb-3">Date</th>
 										<th className="pb-3">Steps</th>
 										<th className="pb-3">Distance (km)</th>
-										<th className="pb-3">Calories Burned (kcal)</th>
+										<th className="pb-3">
+											Calories Burned (kcal)
+										</th>
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
 									{activities.map((act) => (
 										<tr key={act.id} className="py-3">
 											<td className="py-3 font-medium">
-												{new Date(act.date).toLocaleDateString(undefined, {
-													timeZone: "UTC",
-													weekday: "short",
-													month: "short",
-													day: "numeric",
-												})}
+												{new Date(
+													act.date,
+												).toLocaleDateString(
+													undefined,
+													{
+														timeZone: "UTC",
+														weekday: "short",
+														month: "short",
+														day: "numeric",
+													},
+												)}
 											</td>
 											<td className="py-3 font-bold text-emerald-600 dark:text-emerald-400">
 												{act.steps.toLocaleString()}
 											</td>
-											<td className="py-3">{act.distance.toFixed(2)}</td>
-											<td className="py-3">{act.calories.toLocaleString()}</td>
+											<td className="py-3">
+												{act.distance.toFixed(2)}
+											</td>
+											<td className="py-3">
+												{act.calories.toLocaleString()}
+											</td>
 										</tr>
 									))}
 								</tbody>
