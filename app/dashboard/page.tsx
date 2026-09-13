@@ -1,9 +1,10 @@
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
+import { signOut } from "@/auth";
 import { SyncButton } from "@/app/components/SyncButton";
 import { StatCard } from "@/app/components/StatCard";
 import { ProgressRing } from "@/app/components/ProgressRing";
-import { Footprints, Route, Flame } from "lucide-react";
+import { Footprints, Route, Flame, LogOut } from "lucide-react";
 
 export default async function DashboardPage() {
 	const user = await getAuthenticatedUser();
@@ -37,7 +38,24 @@ export default async function DashboardPage() {
 						</p>
 					</div>
 
-					<SyncButton />
+					<div className="flex flex-wrap items-center gap-3">
+						<SyncButton />
+						<form
+							action={async () => {
+								"use server";
+								await signOut({ redirectTo: "/" });
+							}}
+						>
+							<button
+								type="submit"
+								title="Sign Out"
+								className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+							>
+								<LogOut className="h-4 w-4" />
+								<span>Sign Out</span>
+							</button>
+						</form>
+					</div>
 				</header>
 
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
