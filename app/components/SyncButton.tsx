@@ -25,6 +25,8 @@ export function SyncButton() {
 				const result = await syncHealthDataAction(selectedDate);
 				if (result?.success) {
 					setMessage(`Synced ${result.date} successfully! ${result.steps.toLocaleString()} steps`);
+				} else if (result?.error) {
+					setMessage(result.error);
 				}
 			} catch (error: any) {
 				console.error(error);

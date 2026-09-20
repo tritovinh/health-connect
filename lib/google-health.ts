@@ -71,25 +71,4 @@ export async function fetchGoogleDayData(
 	};
 }
 
-export async function refreshAccessToken(
-	refreshToken: string,
-): Promise<string> {
-	const response = await fetch("https://oauth2.googleapis.com/token", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/x-www-form-urlencoded",
-		},
-		body: new URLSearchParams({
-			client_id: process.env.AUTH_GOOGLE_ID!,
-			client_secret: process.env.AUTH_GOOGLE_SECRET!,
-			refresh_token: refreshToken,
-			grant_type: "refresh_token",
-		}),
-	});
 
-	const data = await response.json();
-	if (!response.ok) {
-		throw new Error(`Failed to refresh token`);
-	}
-	return data.access_token;
-}

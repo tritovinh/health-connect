@@ -1,30 +1,22 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { auth } from "@/auth";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
-import { fetchGoogleDayData, refreshAccessToken } from "@/lib/google-health";
+import { fetchGoogleDayData } from "@/lib/google-health";
 import { revalidatePath } from "next/cache";
 
 export async function syncHealthDataAction(targetDate?: string) {
 	const user = await getAuthenticatedUser();
+	const session = await auth();
 
-	const account = await db.account.findFirst({
-		where: {
-			userId: user.id,
-		},
-	});
-
-	if (!account || !account.refresh_token) {
-		throw new Error("No Google account or refresh token found. Please re-authenticate.");
+	if (session?.error === "RefreshAccessTokenError" || !session?.accessToken) {
+		return {
+			success: false,
+			requiresReauth: true,
+			error: "Your Google session has expired. Please sign out and sign back in to reconnect.",
+		};
 	}
-
-	const freshAccessToken = await refreshAccessToken(account.refresh_token);
-
-	await db.account.update({
-		where: { id: account.id },
-		data: { access_token: freshAccessToken },
-	});
-
 
 	let dateStr = targetDate;
 	if (!dateStr) {
@@ -35,54 +27,63 @@ export async function syncHealthDataAction(targetDate?: string) {
 		dateStr = `${year}-${month}-${day}`;
 	}
 
-	const healthData = await fetchGoogleDayData(freshAccessToken, dateStr, dateStr);
+	try {
+		// Use the verified fresh accessToken directly from NextAuth session
+		const healthData = await fetchGoogleDayData(session.accessToken, dateStr, dateStr);
 
-	const calendarDate = new Date(`${dateStr}T00:00:00.000Z`);
+		const calendarDate = new Date(`${dateStr}T00:00:00.000Z`);
 
-	const saved = await db.dailyActivity.upsert({
-		where: {
-			userId_date: {
+		const saved = await db.dailyActivity.upsert({
+			where: {
+				userId_date: {
+					userId: user.id,
+					date: calendarDate,
+				},
+			},
+			update: {
+				steps: healthData.steps,
+				distance: healthData.distance,
+				calories: healthData.calories,
+				sleepMin: healthData.sleepMin,
+				syncedAt: new Date(),
+			},
+			create: {
 				userId: user.id,
 				date: calendarDate,
+				steps: healthData.steps,
+				distance: healthData.distance,
+				calories: healthData.calories,
+				sleepMin: healthData.sleepMin,
 			},
-		},
-		update: {
-			steps: healthData.steps,
-			distance: healthData.distance,
-			calories: healthData.calories,
-			sleepMin: healthData.sleepMin,
-			syncedAt: new Date(),
-		},
-		create: {
-			userId: user.id,
-			date: calendarDate,
-			steps: healthData.steps,
-			distance: healthData.distance,
-			calories: healthData.calories,
-			sleepMin: healthData.sleepMin,
-		},
-	});
+		});
 
-	const todayLocal = new Date();
-	const todayLocalStr = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, "0")}-${String(todayLocal.getDate()).padStart(2, "0")}`;
-	const maxValidDate = new Date(`${todayLocalStr}T23:59:59.999Z`);
+		const todayLocal = new Date();
+		const todayLocalStr = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, "0")}-${String(todayLocal.getDate()).padStart(2, "0")}`;
+		const maxValidDate = new Date(`${todayLocalStr}T23:59:59.999Z`);
 
-	await db.dailyActivity.deleteMany({
-		where: {
-			userId: user.id,
-			date: {
-				gt: maxValidDate,
+		await db.dailyActivity.deleteMany({
+			where: {
+				userId: user.id,
+				date: {
+					gt: maxValidDate,
+				},
 			},
-		},
-	});
+		});
 
-	revalidatePath("/dashboard");
+		revalidatePath("/dashboard");
 
-	return {
-		success: true,
-		date: dateStr,
-		steps: saved.steps,
-		distance: saved.distance,
-		calories: saved.calories,
-	};
+		return {
+			success: true,
+			date: dateStr,
+			steps: saved.steps,
+			distance: saved.distance,
+			calories: saved.calories,
+		};
+	} catch (error: any) {
+		console.error("Failed to sync health data:", error);
+		return {
+			success: false,
+			error: error?.message || "Failed to sync health data.",
+		};
+	}
 }

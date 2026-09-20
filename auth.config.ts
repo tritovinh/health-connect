@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
+import { refreshGoogleAccessToken } from "@/lib/auth-token";
 
 export default {
   providers: [
@@ -35,6 +36,32 @@ export default {
       }
 
       return true;
+    },
+
+    // Reset access token every hour
+    async jwt({ token, account }) {
+      if (account) {
+        return {
+          ...token,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token,
+          accessTokenExpires: (account.expires_at ?? 0) * 1000,
+        };
+      }
+
+      if (token.accessTokenExpires && Date.now() < token.accessTokenExpires - 60_000) {
+        return token;
+      }
+
+      return refreshGoogleAccessToken(token);
+    },
+
+    async session({ session, token }) {
+      if (token) {
+        session.accessToken = token.accessToken;
+        session.error = token.error;
+      }
+      return session;
     },
   },
 } satisfies NextAuthConfig;
