@@ -7,24 +7,13 @@ export function SyncButton() {
 	const [isPending, startTransition] = useTransition();
 	const [message, setMessage] = useState<string | null>(null);
 
-	// Get today in local browser timezone: YYYY-MM-DD
-	const getTodayStr = () => {
-		const now = new Date();
-		const year = now.getFullYear();
-		const month = String(now.getMonth() + 1).padStart(2, "0");
-		const day = String(now.getDate()).padStart(2, "0");
-		return `${year}-${month}-${day}`;
-	};
-
-	const [selectedDate, setSelectedDate] = useState(getTodayStr());
-
 	const handleSync = () => {
 		setMessage(null);
 		startTransition(async () => {
 			try {
-				const result = await syncHealthDataAction(selectedDate);
+				const result = await syncHealthDataAction();
 				if (result?.success) {
-					setMessage(`Synced ${result.date} successfully! ${result.steps.toLocaleString()} steps`);
+					setMessage(`Synced successfully!`);
 				} else if (result?.error) {
 					setMessage(result.error);
 				}
@@ -38,13 +27,13 @@ export function SyncButton() {
 	return (
 		<div className="flex flex-col items-end gap-2">
 			<div className="flex flex-wrap items-center gap-2">
-				<input
+				{/* <input
 					type="date"
 					value={selectedDate}
 					onChange={(e) => setSelectedDate(e.target.value)}
 					disabled={isPending}
 					className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 disabled:opacity-50"
-				/>
+				/> */}
 				<button
 					onClick={handleSync}
 					disabled={isPending}

@@ -6,37 +6,30 @@ import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { fetchGoogleDayData } from "@/lib/google-health";
 import { revalidatePath } from "next/cache";
 
-export async function syncHealthDataAction(targetDate?: string) {
-	const user = await getAuthenticatedUser();
-	const session = await auth();
-
-	if (session?.error === "RefreshAccessTokenError" || !session?.accessToken) {
-		return {
-			success: false,
-			requiresReauth: true,
-			error: "Your Google session has expired. Please sign out and sign back in to reconnect.",
-		};
-	}
-
-	let dateStr = targetDate;
-	if (!dateStr) {
-		const now = new Date();
-		const year = now.getFullYear();
-		const month = String(now.getMonth() + 1).padStart(2, "0");
-		const day = String(now.getDate()).padStart(2, "0");
-		dateStr = `${year}-${month}-${day}`;
-	}
-
+async function syncHealthEachDay(
+	targetDate: Date,
+	userId: string,
+	sessionToken: string,
+) {
+	const date = targetDate;
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	const dateStr: string = `${year}-${month}-${day}`;
 	try {
 		// Use the verified fresh accessToken directly from NextAuth session
-		const healthData = await fetchGoogleDayData(session.accessToken, dateStr, dateStr);
+		const healthData = await fetchGoogleDayData(
+			sessionToken,
+			dateStr,
+			dateStr,
+		);
 
 		const calendarDate = new Date(`${dateStr}T00:00:00.000Z`);
 
 		const saved = await db.dailyActivity.upsert({
 			where: {
 				userId_date: {
-					userId: user.id,
+					userId: userId,
 					date: calendarDate,
 				},
 			},
@@ -48,7 +41,7 @@ export async function syncHealthDataAction(targetDate?: string) {
 				syncedAt: new Date(),
 			},
 			create: {
-				userId: user.id,
+				userId: userId,
 				date: calendarDate,
 				steps: healthData.steps,
 				distance: healthData.distance,
@@ -63,7 +56,7 @@ export async function syncHealthDataAction(targetDate?: string) {
 
 		await db.dailyActivity.deleteMany({
 			where: {
-				userId: user.id,
+				userId: userId,
 				date: {
 					gt: maxValidDate,
 				},
@@ -85,5 +78,24 @@ export async function syncHealthDataAction(targetDate?: string) {
 			success: false,
 			error: error?.message || "Failed to sync health data.",
 		};
+	}
+}
+
+export async function syncHealthDataAction(targetDate: Date = new Date()) {
+	const user = await getAuthenticatedUser();
+	const session = await auth();
+
+	if (session?.error === "RefreshAccessTokenError" || !session?.accessToken) {
+		return {
+			success: false,
+			requiresReauth: true,
+			error: "Your Google session has expired. Please sign out and sign back in to reconnect.",
+		};
+	}
+
+	for (let i = 29; i >= 0; i--) {
+		const syncDate = new Date(targetDate);
+		syncDate.setDate(targetDate.getDate() - i);
+		await syncHealthEachDay(syncDate, user.id, session.accessToken);
 	}
 }
