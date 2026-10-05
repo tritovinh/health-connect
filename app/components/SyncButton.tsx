@@ -17,9 +17,10 @@ export function SyncButton() {
 				} else if (result?.error) {
 					setMessage(result.error);
 				}
-			} catch (error: any) {
+			} catch (error: unknown) {
 				console.error(error);
-				setMessage(error?.message || "Failed to sync health data");
+				const err = error as Error;
+				setMessage(err?.message || "Failed to sync health data");
 			}
 		});
 	};
@@ -27,22 +28,15 @@ export function SyncButton() {
 	return (
 		<div className="flex flex-col items-end gap-2">
 			<div className="flex flex-wrap items-center gap-2">
-				{/* <input
-					type="date"
-					value={selectedDate}
-					onChange={(e) => setSelectedDate(e.target.value)}
-					disabled={isPending}
-					className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 disabled:opacity-50"
-				/> */}
 				<button
 					onClick={handleSync}
 					disabled={isPending}
-					className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+					className="btn btn-accent"
 				>
 					{isPending ? (
 						<>
 							<svg
-								className="h-4 w-4 animate-spin text-white"
+								className="h-4 w-4 animate-spin text-current"
 								xmlns="http://www.w3.org/2000/svg"
 								fill="none"
 								viewBox="0 0 24 24"
@@ -73,8 +67,8 @@ export function SyncButton() {
 				<p
 					className={`text-xs ${
 						message.includes("success")
-							? "text-emerald-600 dark:text-emerald-400"
-							: "text-rose-500"
+							? "text-[var(--good)]"
+							: "text-[var(--bad)]"
 					}`}
 				>
 					{message}

@@ -1,6 +1,5 @@
 import type { JWT } from "next-auth/jwt";
 
-// Refesh the access token when google reject
 export async function refreshGoogleAccessToken(token: JWT): Promise<JWT> {
 	try {
 		if (!token.refreshToken) {
@@ -34,7 +33,6 @@ export async function refreshGoogleAccessToken(token: JWT): Promise<JWT> {
 			...token,
 			accessToken: refreshedTokens.access_token,
 			accessTokenExpires: Date.now() + (refreshedTokens.expires_in ?? 3600) * 1000,
-			// Use old one if the new one isn't available
 			refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
 			error: undefined,
 		};

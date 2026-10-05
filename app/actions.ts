@@ -17,7 +17,6 @@ async function syncHealthEachDay(
 	const day = String(date.getDate()).padStart(2, "0");
 	const dateStr: string = `${year}-${month}-${day}`;
 	try {
-		// Use the verified fresh accessToken directly from NextAuth session
 		const healthData = await fetchGoogleDayData(
 			sessionToken,
 			dateStr,

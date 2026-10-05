@@ -38,7 +38,6 @@ export default {
       return true;
     },
 
-    // Reset access token every hour
     async jwt({ token, account }) {
       if (account) {
         return {

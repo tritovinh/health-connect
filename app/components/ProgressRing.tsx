@@ -12,7 +12,7 @@ export function ProgressRing({
 	goal = 10000,
 	size = 140,
 	strokeWidth = 12,
-	color = "stroke-emerald-500",
+	color = "stroke-[var(--accent)]",
 	showLabel = true,
 }: ProgressRingProps) {
 	const radius = (size - strokeWidth) / 2;
@@ -38,7 +38,7 @@ export function ProgressRing({
 					r={radius}
 					strokeWidth={strokeWidth}
 					fill="transparent"
-					className="stroke-zinc-100 dark:stroke-zinc-800"
+					className="stroke-[var(--line)]"
 				/>
 				<circle
 					cx={size / 2}
@@ -55,10 +55,10 @@ export function ProgressRing({
 
 			{showLabel && (
 				<div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-					<span className="text-xl font-black text-zinc-900 dark:text-zinc-100">
+					<span className="font-serif text-xl text-[var(--ink)]">
 						{percentage}%
 					</span>
-					<span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+					<span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
 						of goal
 					</span>
 				</div>

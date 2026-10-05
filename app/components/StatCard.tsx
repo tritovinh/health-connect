@@ -8,28 +8,34 @@ export interface StatCardProps {
 	accentColor?: "emerald" | "blue" | "amber" | "rose" | "purple";
 	subtitle?: string;
 	visual?: React.ReactNode;
+	footer?: React.ReactNode;
 }
 
 const colorStyles = {
 	emerald: {
-		text: "text-emerald-600 dark:text-emerald-400",
-		iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400",
+		text: "text-[var(--accent)]",
+		iconBg:
+			"bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] text-[var(--accent)]",
 	},
 	blue: {
-		text: "text-blue-600 dark:text-blue-400",
-		iconBg: "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400",
+		text: "text-[var(--pine)]",
+		iconBg:
+			"bg-[color-mix(in_srgb,var(--pine)_16%,transparent)] text-[var(--pine)]",
 	},
 	amber: {
-		text: "text-amber-600 dark:text-amber-400",
-		iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400",
+		text: "text-[var(--accent-2)]",
+		iconBg:
+			"bg-[color-mix(in_srgb,var(--accent-2)_16%,transparent)] text-[var(--accent-2)]",
 	},
 	rose: {
-		text: "text-rose-600 dark:text-rose-400",
-		iconBg: "bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400",
+		text: "text-[var(--bad)]",
+		iconBg:
+			"bg-[color-mix(in_srgb,var(--bad)_16%,transparent)] text-[var(--bad)]",
 	},
 	purple: {
-		text: "text-purple-600 dark:text-purple-400",
-		iconBg: "bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400",
+		text: "text-[var(--good)]",
+		iconBg:
+			"bg-[color-mix(in_srgb,var(--good)_16%,transparent)] text-[var(--good)]",
 	},
 };
 
@@ -41,48 +47,45 @@ export function StatCard({
 	accentColor = "emerald",
 	subtitle,
 	visual,
+	footer,
 }: StatCardProps) {
 	const colors = colorStyles[accentColor];
 
 	return (
-		<div className="flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900/50">
+		<div className="card flex flex-col justify-between gap-5 p-5 transition-transform hover:-translate-y-0.5">
 			<div className="flex items-center justify-between">
-				<span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+				<span className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
 					{title}
 				</span>
 				{icon && (
-					<div className={`flex h-9 w-9 items-center justify-center rounded-xl ${colors.iconBg}`}>
+					<div
+						className={`flex h-8 w-8 items-center justify-center rounded-full ${colors.iconBg}`}
+					>
 						{icon}
 					</div>
 				)}
 			</div>
 
-			<div className="mt-4 flex items-center justify-between gap-3">
+			<div className="flex items-center justify-between gap-3">
 				<div>
-					<div className="flex items-baseline gap-2">
-						<span className={`text-3xl font-black ${colors.text}`}>
+					<div className="flex items-baseline gap-1.5">
+						<span className="font-serif text-4xl leading-none tracking-tight text-[var(--ink)]">
 							{value}
 						</span>
 						{unit && (
-							<span className="text-sm font-medium text-zinc-400">
-								{unit}
-							</span>
+							<span className="text-sm text-[var(--muted)]">{unit}</span>
 						)}
 					</div>
 
 					{subtitle && (
-						<p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-							{subtitle}
-						</p>
+						<p className="mt-2 text-xs text-[var(--muted)]">{subtitle}</p>
 					)}
 				</div>
 
-				{visual && (
-					<div className="shrink-0">
-						{visual}
-					</div>
-				)}
+				{visual && <div className="shrink-0">{visual}</div>}
 			</div>
+
+			{footer && <div className={colors.text}>{footer}</div>}
 		</div>
 	);
 }
