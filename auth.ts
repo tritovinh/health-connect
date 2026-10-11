@@ -8,30 +8,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   callbacks: {
     ...authConfig.callbacks,
-    async signIn({ user, account }) {
-      if (account && account.provider === "google" && user.id) {
-        await db.account.upsert({
-          where: {
-            provider_providerAccountId: {
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
+    async signIn({ account }) {
+      if (account && account.provider === "google") {
+        try {
+          const existingAccount = await db.account.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
             },
-          },
-          update: {
-            access_token: account.access_token,
-            refresh_token: account.refresh_token ?? undefined,
-            expires_at: account.expires_at,
-          },
-          create: {
-            userId: user.id,
-            type: account.type,
-            provider: account.provider,
-            providerAccountId: account.providerAccountId,
-            access_token: account.access_token,
-            refresh_token: account.refresh_token,
-            expires_at: account.expires_at,
-          },
-        });
+          });
+
+          if (existingAccount) {
+            await db.account.update({
+              where: {
+                provider_providerAccountId: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                },
+              },
+              data: {
+                access_token: account.access_token,
+                refresh_token: account.refresh_token ?? existingAccount.refresh_token,
+                expires_at: account.expires_at,
+              },
+            });
+          }
+        } catch (error) {
+          console.error("Error updating Google account tokens:", error);
+        }
       }
       return true;
     },
